@@ -1,0 +1,71 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GAR_LOCATION: ${{ secrets.GAR_LOCATION }}
+  SERVICE_NAME: clinical-bert-api
+  REGION: ${{ secrets.GCP_REGION }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+      
+      - name: Configure Docker for GAR
+        run: |
+          gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+      
+      - name: Build Docker image
+        run: |
+          docker build -t $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api:${{ github.sha }} .
+          docker build -t $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api:latest .
+      
+      - name: Push Docker image to Artifact Registry
+        run: |
+          docker push $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api:${{ github.sha }}
+          docker push $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api:latest
+      
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image $GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api:${{ github.sha }} \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 2Gi \
+            --cpu 2 \
+            --timeout 300 \
+            --max-instances 10 \
+            --min-instances 0
+      
+      - name: Get Cloud Run URL
+        id: get-url
+        run: |
+          URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      
+      - name: Output deployment URL
+        run: |
+          echo "Deployment successful! API URL: ${{ steps.get-url.outputs.url }}"
+
