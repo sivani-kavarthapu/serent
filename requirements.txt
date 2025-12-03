@@ -4,7 +4,9 @@ uvicorn[standard]==0.24.0
 pydantic==2.5.0
 
 # ML dependencies
-torch==2.1.0
+# Pin torch to a version available on GitHub Actions Python 3.12 runners
+# and compatible with transformers 4.35.x
+torch==2.9.1
 transformers==4.35.0
 sentencepiece==0.1.99
 
