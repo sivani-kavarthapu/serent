@@ -146,7 +146,10 @@ async def predict_batch(request: BatchPredictionRequest):
         ]
         
         elapsed_time = (time.time() - start_time) * 1000
-        logger.info(f"Batch prediction completed in {elapsed_time:.2f}ms for {len(request.sentences)} sentences")
+        logger.info(
+            f"Batch prediction completed in {elapsed_time:.2f}ms for "
+            f"{len(request.sentences)} sentences"
+        )
         
         return BatchPredictionResponse(predictions=predictions)
     
