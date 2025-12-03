@@ -1,0 +1,23 @@
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# ML dependencies
+torch==2.1.0
+transformers==4.35.0
+sentencepiece==0.1.99
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
+
+# Linting
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+
+# Optional: for better performance
+# accelerate==0.24.1
+
