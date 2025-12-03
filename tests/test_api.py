@@ -106,9 +106,9 @@ def test_batch_predict():
             "sentences": [
                 "The patient denies chest pain.",
                 "He has a history of hypertension.",
-                "If the patient experiences dizziness, reduce the dosage."
+                "If the patient experiences dizziness, reduce the dosage.",
             ]
-        }
+        },
     )
     assert response.status_code == 200
     data = response.json()

@@ -57,7 +57,7 @@ class ClinicalBERTModel:
                 return_tensors="pt",
                 truncation=True,
                 max_length=512,
-                padding=True
+                padding=True,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
             
@@ -96,7 +96,7 @@ class ClinicalBERTModel:
                 return_tensors="pt",
                 truncation=True,
                 max_length=512,
-                padding=True
+                padding=True,
             )
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
             
