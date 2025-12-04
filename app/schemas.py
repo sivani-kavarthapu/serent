@@ -16,7 +16,6 @@ class BatchPredictionRequest(BaseModel):
         ..., description="List of clinical sentences to classify", min_items=1
     )
 
-
 class PredictionResponse(BaseModel):
     """Response schema for single prediction."""
     label: str = Field(
