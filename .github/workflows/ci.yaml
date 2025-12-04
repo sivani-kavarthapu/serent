@@ -35,8 +35,11 @@ jobs:
           pip install -r requirements.txt
         
       - name: Run unit tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest tests/ -v --cov=app --cov-report=xml
+
       
       - name: Upload coverage to Codecov (optional)
         uses: codecov/codecov-action@v3
