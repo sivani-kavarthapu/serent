@@ -2,9 +2,8 @@
 import logging
 import time
 from contextlib import asynccontextmanager
-from typing import List
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -31,7 +30,6 @@ API_VERSION = "1.0.0"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown events."""
-    # Startup: Load model
     logger.info("Starting up Clinical BERT API...")
     try:
         model = get_model()
@@ -39,10 +37,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to load model during startup: {str(e)}")
         raise
-    
+
     yield
-    
-    # Shutdown: Cleanup if needed
+
     logger.info("Shutting down Clinical BERT API...")
 
 
@@ -99,23 +96,22 @@ async def health_check():
 async def predict(request: PredictionRequest):
     """
     Predict assertion status for a single clinical sentence.
-    
+
     Expected labels:
     - PRESENT: Medical concept is present
     - ABSENT: Medical concept is absent/denied
     - CONDITIONAL: Medical concept is conditional/hypothetical
     """
     start_time = time.time()
-    
     try:
         model = get_model()
         label, score = model.predict(request.sentence)
-        
-        elapsed_time = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+        elapsed_time = (time.time() - start_time) * 1000  # ms
         logger.info(f"Prediction completed in {elapsed_time:.2f}ms")
-        
+
         return PredictionResponse(label=label, score=score)
-    
+
     except Exception as e:
         logger.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
@@ -125,34 +121,31 @@ async def predict(request: PredictionRequest):
 async def predict_batch(request: BatchPredictionRequest):
     """
     Predict assertion status for multiple clinical sentences (batch processing).
-    
-    This endpoint is more efficient for processing multiple sentences at once.
     """
     start_time = time.time()
-    
     try:
-        if len(request.sentences) > 100:  # Limit batch size
+        if len(request.sentences) > 100:
             raise HTTPException(
                 status_code=400,
                 detail="Batch size exceeds maximum of 100 sentences"
             )
-        
+
         model = get_model()
         results = model.predict_batch(request.sentences)
-        
+
         predictions = [
             PredictionResponse(label=label, score=score)
             for label, score in results
         ]
-        
+
         elapsed_time = (time.time() - start_time) * 1000
         logger.info(
             f"Batch prediction completed in {elapsed_time:.2f}ms for "
             f"{len(request.sentences)} sentences"
         )
-        
+
         return BatchPredictionResponse(predictions=predictions)
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -161,7 +154,7 @@ async def predict_batch(request: BatchPredictionRequest):
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler."""
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
     return JSONResponse(
@@ -173,4 +166,3 @@ async def global_exception_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

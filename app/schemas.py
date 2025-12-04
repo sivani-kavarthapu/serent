@@ -2,8 +2,13 @@
 from typing import List, Literal, Annotated
 from pydantic import BaseModel, Field
 
+class PredictionRequest(BaseModel):
+    """Request schema for single prediction."""
+    sentence: str = Field(..., min_length=1, description="Clinical sentence to classify")
+
 class BatchPredictionRequest(BaseModel):
     """Request schema for batch predictions."""
+    # Use Annotated + Field to satisfy Pylance and Pydantic v2
     sentences: Annotated[List[str], Field(min_length=1)] = Field(
         ..., description="List of clinical sentences to classify"
     )
@@ -27,6 +32,7 @@ class HealthResponse(BaseModel):
     model_loaded: bool = Field(..., description="Whether model is loaded")
     version: str = Field(..., description="API version")
 
+    # Avoid conflict with Pydantic's protected 'model_' namespace
     model_config = {
         "protected_namespaces": (),
     }
