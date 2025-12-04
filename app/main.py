@@ -23,38 +23,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# API version
 API_VERSION = "1.0.0"
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager for startup/shutdown events."""
-    logger.info("Starting up Clinical BERT API...")
+    """Startup/shutdown."""
+    logger.info("Starting up API...")
     try:
-        model = get_model()
-        logger.info("Model loaded successfully during startup")
+        # Warm up model
+        get_model()
+        logger.info("Model initialized")
     except Exception as e:
-        logger.error(f"Failed to load model during startup: {str(e)}")
+        logger.error(f"Failed to initialize model: {e}")
         raise
-
     yield
+    logger.info("Shutting down API...")
 
-    logger.info("Shutting down Clinical BERT API...")
 
-
-# Create FastAPI app
 app = FastAPI(
     title="Clinical BERT Real-Time Inference API",
-    description="API for clinical text classification using Hugging Face Clinical BERT model",
+    description="API for clinical text classification",
     version=API_VERSION,
     lifespan=lifespan,
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=["*"],  # adjust for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,7 +59,6 @@ app.add_middleware(
 
 @app.get("/", tags=["Root"])
 async def root():
-    """Root endpoint."""
     return {
         "message": "Clinical BERT Real-Time Inference API",
         "version": API_VERSION,
@@ -74,17 +69,16 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 async def health_check():
-    """Health check endpoint."""
     try:
         model = get_model()
-        model_loaded = model.model is not None and model.tokenizer is not None
+        model_loaded = bool(model.model) and bool(model.tokenizer)
         return HealthResponse(
             status="healthy" if model_loaded else "unhealthy",
             model_loaded=model_loaded,
             version=API_VERSION,
         )
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Health check failed: {e}")
         return HealthResponse(
             status="unhealthy",
             model_loaded=False,
@@ -94,73 +88,41 @@ async def health_check():
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
 async def predict(request: PredictionRequest):
-    """
-    Predict assertion status for a single clinical sentence.
-
-    Expected labels:
-    - PRESENT: Medical concept is present
-    - ABSENT: Medical concept is absent/denied
-    - CONDITIONAL: Medical concept is conditional/hypothetical
-    """
-    start_time = time.time()
+    start = time.time()
     try:
         model = get_model()
         label, score = model.predict(request.sentence)
-
-        elapsed_time = (time.time() - start_time) * 1000  # ms
-        logger.info(f"Prediction completed in {elapsed_time:.2f}ms")
-
+        elapsed_ms = (time.time() - start) * 1000
+        logger.info(f"Predict done in {elapsed_ms:.2f}ms")
         return PredictionResponse(label=label, score=score)
-
     except Exception as e:
-        logger.error(f"Prediction error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+        logger.error(f"Prediction error: {e}")
+        raise HTTPException(status_code=500, detail="Prediction failed")
 
 
 @app.post("/predict/batch", response_model=BatchPredictionResponse, tags=["Prediction"])
 async def predict_batch(request: BatchPredictionRequest):
-    """
-    Predict assertion status for multiple clinical sentences (batch processing).
-    """
-    start_time = time.time()
+    start = time.time()
     try:
         if len(request.sentences) > 100:
-            raise HTTPException(
-                status_code=400,
-                detail="Batch size exceeds maximum of 100 sentences"
-            )
-
+            raise HTTPException(status_code=400, detail="Batch size exceeds 100")
         model = get_model()
         results = model.predict_batch(request.sentences)
-
-        predictions = [
-            PredictionResponse(label=label, score=score)
-            for label, score in results
-        ]
-
-        elapsed_time = (time.time() - start_time) * 1000
-        logger.info(
-            f"Batch prediction completed in {elapsed_time:.2f}ms for "
-            f"{len(request.sentences)} sentences"
-        )
-
-        return BatchPredictionResponse(predictions=predictions)
-
+        preds = [PredictionResponse(label=l, score=s) for l, s in results]
+        elapsed_ms = (time.time() - start) * 1000
+        logger.info(f"Batch predict ({len(preds)}) in {elapsed_ms:.2f}ms")
+        return BatchPredictionResponse(predictions=preds)
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Batch prediction error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Batch prediction failed: {str(e)}")
+        logger.error(f"Batch prediction error: {e}")
+        raise HTTPException(status_code=500, detail="Batch prediction failed")
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler."""
-    logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error"}
-    )
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
 if __name__ == "__main__":
