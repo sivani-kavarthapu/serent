@@ -6,9 +6,9 @@ set -e
 # Configuration (update these values)
 PROJECT_ID="${GCP_PROJECT_ID:-your-project-id}"
 GAR_LOCATION="${GAR_LOCATION:-us-central1}"
-SERVICE_NAME="clinical-bert-api"
+SERVICE_NAME="serent"
 REGION="${GCP_REGION:-us-central1}"
-IMAGE_NAME="$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/clinical-bert-api"
+IMAGE_NAME="$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE_NAME/serent"
 
 echo "🚀 Starting deployment to Google Cloud Run..."
 
