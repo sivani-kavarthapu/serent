@@ -28,13 +28,13 @@ format:
 	isort app/ tests/
 
 run:
-	uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+	uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
 docker-build:
 	docker build -t clinical-bert-api .
 
 docker-run:
-	docker run -p 8000:8000 clinical-bert-api
+	docker run -p 8080:8080 serent
 
 deploy:
 	@if [ -z "$$GCP_PROJECT_ID" ]; then \

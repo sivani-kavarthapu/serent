@@ -66,7 +66,7 @@ This API uses the `bvanaken/clinical-assertion-negation-bert` model from Hugging
 
 4. **Run the application**
    ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000
+   uvicorn app.main:app --host 0.0.0.0 --port 8080
    ```
 
    Or use Python directly:
@@ -75,9 +75,9 @@ This API uses the `bvanaken/clinical-assertion-negation-bert` model from Hugging
    ```
 
 5. **Access the API**
-   - API: http://localhost:8000
-   - Interactive docs: http://localhost:8000/docs
-   - Health check: http://localhost:8000/health
+   - API: http://localhost:8080
+   - Interactive docs: http://localhost:8080/docs
+   - Health check: http://localhost:8080/health
 
 ## 💻 Local Development
 
@@ -197,7 +197,7 @@ import requests
 
 # Single prediction
 response = requests.post(
-    "http://localhost:8000/predict",
+    "http://localhost:8080/predict",
     json={"sentence": "The patient denies chest pain."}
 )
 print(response.json())
@@ -205,7 +205,7 @@ print(response.json())
 
 # Batch prediction
 response = requests.post(
-    "http://localhost:8000/predict/batch",
+    "http://localhost:8080/predict/batch",
     json={
         "sentences": [
             "The patient denies chest pain.",
@@ -220,15 +220,15 @@ print(response.json())
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 
 # Single prediction
-curl -X POST http://localhost:8000/predict \
+curl -X POST http://localhost:8080/predict \
   -H "Content-Type: application/json" \
   -d '{"sentence": "The patient denies chest pain."}'
 
 # Batch prediction
-curl -X POST http://localhost:8000/predict/batch \
+curl -X POST http://localhost:8080/predict/batch \
   -H "Content-Type: application/json" \
   -d '{"sentences": ["The patient denies chest pain.", "He has a history of hypertension."]}'
 ```
@@ -357,7 +357,7 @@ gcloud run deploy $SERVICE_NAME \
     --timeout 300 \
     --max-instances 10 \
     --min-instances 0 \
-    --port 8000
+    --port 8080
 ```
 
 ##### 6. Get Service URL
@@ -439,13 +439,13 @@ gcloud iam service-accounts keys create key.json \
 
 ```bash
 # Build image
-docker build -t clinical-bert-api .
+docker build -t serent.
 
 # Run container
-docker run -p 8000:8000 clinical-bert-api
+docker run -p 8080:8080 serent
 
 # Test
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 ```
 
 ## ⚠️ Known Issues & Tradeoffs
