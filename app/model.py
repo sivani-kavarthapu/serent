@@ -16,6 +16,7 @@ LABEL_NORMALIZATION = {
     "present": "PRESENT",
     "absent": "ABSENT",
     "conditional": "CONDITIONAL",
+    "possible": "CONDITIONAL",  # Map POSSIBLE to CONDITIONAL
     "negated": "ABSENT",
     "affirmed": "PRESENT",
     "hypothetical": "CONDITIONAL",

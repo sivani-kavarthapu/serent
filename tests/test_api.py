@@ -56,7 +56,7 @@ def test_predict_conditional():
     """Test prediction for CONDITIONAL case."""
     response = client.post(
         "/predict",
-        json={"sentence": "If the patient experiences dizziness, reduce the dosage."}
+        json={"sentence": "The patient may have pneumonia."}
     )
     assert response.status_code == 200
     data = response.json()
@@ -106,7 +106,7 @@ def test_batch_predict():
             "sentences": [
                 "The patient denies chest pain.",
                 "He has a history of hypertension.",
-                "If the patient experiences dizziness, reduce the dosage.",
+                "The patient may have pneumonia.",
             ]
         },
     )
